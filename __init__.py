@@ -137,8 +137,8 @@ def get_avatar(message, surname='NONE', name='NONE', group=0):
                            username=message.from_user.username, avatar=photo_id)
     logger.info('New user {} {} group {} - @{} was registered'.format(user.surname, user.name,
                                                                       user.group, user.username))
-    bot.send_message(config.creatorID, 'New user @{}'.format(user.username))
-    bot.send_photo(config.creatorID, user.avatar)
+    bot.send_message(config.creatorID, 'New user @{}'.format(user.username), disable_notification=True)
+    bot.send_photo(config.creatorID, user.avatar, disable_notification=True)
     bot.send_message(message.chat.id, config.successfulReg)
 
 
@@ -425,9 +425,29 @@ def get_photo(message):
         user = User.get(User.tg_id == message.chat.id)
         user.avatar = photo_id
         user.save()
+        bot.send_message(message.chat.id, 'Успешно!')
+        bot.send_message(config.creatorID, 'User {} {} group {} @{} updated photo'.format(user.surname, user.name,
+                                                                                          user.group, user.username))
+        bot.send_photo(config.creatorID, photo_id, disable_notification=True)
     except DoesNotExist:
         bot.send_message(message.chat.id, 'Ошибка!')
         return
+
+
+@bot.message_handler(commands=['get_photo'])
+@restricted(Role.ADMIN)
+def get_photo_cmd(message):
+    l = message.text.split(' ', maxsplit=1)
+    if len(l) < 2:
+        bot.send_message(message.chat.id, 'Wrong format!\n/get_photo username')
+        return
+    username = l[1]
+    try:
+        user = User.get(User.username == username)
+    except DoesNotExist:
+        bot.send_message(message.chat.id, 'No such user!')
+        return
+    bot.send_photo(message.chat.id, user.avatar)
 
 
 @bot.message_handler(content_types=['sticker'])
