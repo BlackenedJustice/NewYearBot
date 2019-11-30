@@ -12,6 +12,7 @@ from users import User, Role
 import random
 import string
 
+
 def random_string(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
@@ -75,7 +76,7 @@ def check_text(message, func):
 
 
 def check_group_number(n):
-    return 0 < n < 700 and n % 100 < 50
+    return 100 < n < 700 and n % 100 < 50
 
 
 @bot.message_handler(commands=['start'])
@@ -361,7 +362,7 @@ def wall_cmd(message):
         return
     message.text = l[1]
 
-    for user in User.select().where(User.role != Role.PLAYER):
+    for user in User.select().where(User.role > Role.PLAYER):
         bot.send_message(user.tg_id, message.text)
     bot.send_message(message.chat.id, 'Success!')
 
