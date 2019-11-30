@@ -67,6 +67,20 @@ def restricted(role):
     return wrapper
 
 
+def guard():
+
+    def wrapper(func):
+        @wraps(func)
+        def wrapped(message, *args, **kwargs):
+            if message.chat.id in config.ban_list:
+                logger.warning("Banned user @{}.".format(message.from_user.username))
+                return
+            return func(message, *args, **kwargs)
+        return wrapped
+
+    return wrapper
+
+
 def check_text(message, func):
     if message.text is None:
         logger.warning("Wrong data format in <{}> by {}".format(func.__name__, message.from_user.username))
@@ -80,12 +94,14 @@ def check_group_number(n):
 
 
 @bot.message_handler(commands=['start'])
+@guard()
 def start_cmd(message):
     bot.send_message(message.chat.id, config.welcomeMsg)
     bot.register_next_step_handler(message, get_surname)
 
 
 @bot.message_handler(commands=['reg'])
+@guard()
 def reg_cmd(message):
     bot.send_message(message.chat.id, config.getSurname)
     bot.register_next_step_handler(message, get_surname)
@@ -127,6 +143,10 @@ def get_avatar(message, surname='NONE', name='NONE', group=0):
     photo_id = message.photo[0].file_id
     try:
         user = User.get(User.tg_id == message.chat.id)
+        if user.role == Role.NONE:
+            bot.send_message(user.tg_id, config.alreadyKilled)
+            logger.warning('Trying to re-register: @{}'.format(user.username))
+            return
         user.surname = surname
         user.name = name
         user.group = group
@@ -143,6 +163,7 @@ def get_avatar(message, surname='NONE', name='NONE', group=0):
 
 
 @bot.message_handler(commands=['help'])
+@guard()
 def help_cmp(message):
     bot.send_message(message.chat.id, config.helpMsg)
 
@@ -411,6 +432,7 @@ def make_admin_cmd(message):
 
 
 @bot.message_handler(commands=['update_photo'])
+@restricted(Role.PLAYER)
 def update_photo_cmd(message):
     bot.send_message(message.chat.id, config.getAvatar)
     bot.register_next_step_handler(message, get_photo)
@@ -450,12 +472,28 @@ def get_photo_cmd(message):
     bot.send_photo(message.chat.id, user.avatar)
 
 
+@bot.message_handler(commands=['ban'])
+@restricted(Role.GOD)
+def ban_cmd(message):
+    l = message.text.split(' ', maxsplit=1)
+    if len(l) < 2:
+        bot.send_message(message.chat.id, 'Wrong format!\n/ban tg_id')
+        return
+    tg_id = l[1]
+    if not tg_id.isdecimal():
+        bot.send_message(message.chat.id, 'tg_id must be integer!')
+        return
+    config.ban_list.append(int(tg_id))
+
+
 @bot.message_handler(content_types=['sticker'])
+@guard()
 def echo_sticker(message):
     bot.send_message(message.chat.id, 'Классный стикер!')
 
 
 @bot.message_handler(content_types=['text'])
+@guard()
 def echo_text(message):
     bot.send_message(message.chat.id, message.text)
 
