@@ -312,6 +312,18 @@ def kill(user):
     logger.info('User {} {} group {} was killed! Victims: {}'.format(user.surname, user.name, user.group, user.score))
 
 
+@bot.message_handler(commands=['show'])
+@restricted(Role.PLAYER)
+def show_cmd(message):
+    try:
+        user = User.get(User.tg_id == message.chat.id)
+        target = User.get(User.tg_id == user.target_id)
+    except DoesNotExist:
+        bot.send_message(message.chat.id, config.error)
+        return
+    next_target(user, target)
+
+
 @bot.message_handler(commands=['force_kill'])
 @restricted(Role.ADMIN)
 def force_kill_cmd(message):
