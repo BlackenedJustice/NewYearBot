@@ -11,6 +11,7 @@ from users import User, Role
 
 import random
 import string
+import time
 
 
 def random_string(size=6, chars=string.ascii_uppercase + string.digits):
@@ -382,8 +383,13 @@ def everyone_cmd(message):
 
 
 def everyone(msg):
+    cnt = 0
     for user in User.select():
         bot.send_message(user.tg_id, msg)
+        cnt += 1
+        if cnt >= 30:
+            time.sleep(1)
+            cnt = 0
 
 
 @bot.message_handler(commands=['wall'])
@@ -395,8 +401,14 @@ def wall_cmd(message):
         return
     message.text = l[1]
 
+    cnt = 0
     for user in User.select().where(User.role > Role.PLAYER):
         bot.send_message(user.tg_id, message.text)
+        cnt += 1
+        if cnt >= 30:
+            time.sleep(1)
+            cnt = 0
+
     bot.send_message(message.chat.id, 'Success!')
 
 
