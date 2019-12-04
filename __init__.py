@@ -188,12 +188,23 @@ def prof_cmd(message):
 def begin_cmd(message):
     logger.info('GAME STARTED - @{}'.format(message.from_user.username))
     shuffle()
+    bot.send_message(message.chat.id, 'Success! Run /set_targets to inform players')
+
+
+@bot.message_handler(commands=['set_targets'])
+@restricted(Role.GOD)
+def set_targets_cmd(message):
     cnt_err = 0
+    cnt = 0
     for user in User.select().where(User.role == Role.PLAYER):
         bot.send_message(user.tg_id, config.startGame)
         try:
             target = User.get(User.tg_id == user.target_id)
+            cnt += 1
             next_target(user, target)
+            if cnt >= 29:
+                time.sleep(1)
+                cnt = 0
         except DoesNotExist:
             cnt_err += 1
             bot.send_message(user.tg_id, 'Что-то не получилось в распределении игроков, пожалуйста, '
@@ -217,27 +228,46 @@ def shuffle():
             users.append(user)
     random.shuffle(users)
     random.shuffle(prof)
-    delta = len(users) - len(prof)
-    if delta < 0:
-        users, prof = prof, users
-        delta = -delta
 
-    delta = max(len(users) // delta, 1) if delta > 0 else 1
-    cycle = []
+    tripple = False
+    cur_prof = 0
     cur_user = 0
-    for u in prof:
-        for i in range(delta):
-            user = users[cur_user + i]
-            if len(cycle):
-                set_target(cycle[-1], target=user)
-            cycle.append(user)
-        cur_user += delta
-        set_target(cycle[-1], target=u)
-        cycle.append(u)
-    for i in range(cur_user, len(users)):
-        set_target(cycle[-1], target=users[i])
-        cycle.append(users[i])
-    set_target(cycle[-1], target=cycle[0])
+    cycle = []
+    while cur_prof < len(prof):
+        cycle.append(prof[cur_prof])
+        cycle.append(prof[cur_prof + 1])
+        if tripple:
+            tripple = False
+            cycle.append(prof[cur_prof + 2])
+            cur_prof += 3
+        else:
+            tripple = True
+            cur_prof += 2
+        cycle.append(users[cur_user])
+        cur_user += 1
+
+    for i, user in enumerate(cycle):
+        set_target(user=cycle[i - 1], target=user)
+
+
+    # delta = len(prof) - len(users)
+    #
+    # delta = max(len(prof) // delta, 1) if delta > 0 else 1
+    # cycle = []
+    # cur_user = 0
+    # for u in users:
+    #     for i in range(delta):
+    #         user = prof[cur_user + i]
+    #         if len(cycle):
+    #             set_target(cycle[-1], target=user)
+    #         cycle.append(user)
+    #     cur_user += delta
+    #     set_target(cycle[-1], target=u)
+    #     cycle.append(u)
+    # for i in range(cur_user, len(prof)):
+    #     set_target(cycle[-1], target=prof[i])
+    #     cycle.append(prof[i])
+    # set_target(cycle[-1], target=cycle[0])
 
 
 @bot.message_handler(commands=['reset'])
