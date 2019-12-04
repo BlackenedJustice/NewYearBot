@@ -229,20 +229,19 @@ def shuffle():
     random.shuffle(users)
     random.shuffle(prof)
 
-    tripple = False
+    double = False
     cur_prof = 0
     cur_user = 0
     cycle = []
     while cur_prof < len(prof):
         cycle.append(prof[cur_prof])
-        cycle.append(prof[cur_prof + 1])
-        if tripple:
-            tripple = False
-            cycle.append(prof[cur_prof + 2])
-            cur_prof += 3
-        else:
-            tripple = True
+        if double:
+            double = False
+            cycle.append(prof[cur_prof + 1])
             cur_prof += 2
+        else:
+            double = True
+            cur_prof += 1
         cycle.append(users[cur_user])
         cur_user += 1
 
