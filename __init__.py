@@ -167,7 +167,14 @@ def get_avatar(message, surname='NONE', name='NONE', group=0):
 @bot.message_handler(commands=['help'])
 @guard()
 def help_cmp(message):
-    bot.send_message(message.chat.id, config.helpMsg)
+    msg = config.helpMsg
+    try:
+        user = User.get(User.tg_id == message.chat.id)
+        if user.role >= Role.ADMIN:
+            msg = config.adminHelp
+    except DoesNotExist:
+        pass
+    bot.send_message(message.chat.id, msg)
 
 
 @bot.message_handler(commands=['rules'])
@@ -512,6 +519,17 @@ def get_photo_cmd(message):
         bot.send_message(message.chat.id, 'No such user!')
         return
     bot.send_photo(message.chat.id, user.avatar)
+
+
+@bot.message_handler(commands=['show_players'])
+@restricted(Role.ADMIN)
+def show_players_cmd(message):
+    msg = 'Список участников:\n'
+    for i, user in enumerate(User.select().where(User.role == Role.PLAYER)):
+        msg += '{id}) {surname} {name} - {group} группа - @{username}\n'.format(id=user.tg_id, surname=user.surname,
+                                                                              name=user.name, username=user.username,
+                                                                              group=user.group)
+    bot.send_message(message.chat.id, msg)
 
 
 @bot.message_handler(commands=['ban'])
