@@ -98,6 +98,7 @@ def check_group_number(n):
 @guard()
 def start_cmd(message):
     bot.send_message(message.chat.id, config.welcomeMsg)
+    bot.send_message(message.chat.id, config.getSurname)
     bot.register_next_step_handler(message, get_surname)
 
 
@@ -169,6 +170,12 @@ def help_cmp(message):
     bot.send_message(message.chat.id, config.helpMsg)
 
 
+@bot.message_handler(commands=['rules'])
+@guard()
+def rules_cmd(message):
+    bot.send_message(message.chat.id, config.rules)
+
+
 @bot.message_handler(commands=['prof'])
 def prof_cmd(message):
     try:
@@ -228,45 +235,27 @@ def shuffle():
             users.append(user)
     random.shuffle(users)
     random.shuffle(prof)
+    if len(prof) < len(users):
+        prof, users = users, prof
 
-    double = False
+    k = len(prof) // len(users)
+    delta = len(prof) % len(users)
     cur_prof = 0
     cur_user = 0
     cycle = []
-    while cur_prof < len(prof):
-        cycle.append(prof[cur_prof])
-        if double:
-            double = False
-            cycle.append(prof[cur_prof + 1])
-            cur_prof += 2
-        else:
-            double = True
-            cur_prof += 1
+    while cur_user < len(users):
+        for i in range(k):
+            cycle.append(prof[cur_prof + i])
         cycle.append(users[cur_user])
         cur_user += 1
+        cur_prof += k
+        if delta > 0:
+            cycle.append(prof[cur_prof])
+            cur_prof += 1
+            delta -= 1
 
     for i, user in enumerate(cycle):
         set_target(user=cycle[i - 1], target=user)
-
-
-    # delta = len(prof) - len(users)
-    #
-    # delta = max(len(prof) // delta, 1) if delta > 0 else 1
-    # cycle = []
-    # cur_user = 0
-    # for u in users:
-    #     for i in range(delta):
-    #         user = prof[cur_user + i]
-    #         if len(cycle):
-    #             set_target(cycle[-1], target=user)
-    #         cycle.append(user)
-    #     cur_user += delta
-    #     set_target(cycle[-1], target=u)
-    #     cycle.append(u)
-    # for i in range(cur_user, len(prof)):
-    #     set_target(cycle[-1], target=prof[i])
-    #     cycle.append(prof[i])
-    # set_target(cycle[-1], target=cycle[0])
 
 
 @bot.message_handler(commands=['reset'])
@@ -328,8 +317,8 @@ def kill_target(message):
 
 
 def next_target(user, target):
-    bot.send_message(user.tg_id, config.newTarget.format(target.surname, target.name, target.group,
-                                                         user.target_key))
+    bot.send_message(user.tg_id, config.newTarget.format(random.choice(config.motiveMessages), target.surname,
+                                                         target.name, user.target_key, target.group,))
     bot.send_photo(user.tg_id, target.avatar)
 
 
