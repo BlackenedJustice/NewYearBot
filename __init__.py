@@ -524,12 +524,29 @@ def get_photo_cmd(message):
 @bot.message_handler(commands=['show_players'])
 @restricted(Role.ADMIN)
 def show_players_cmd(message):
-    msg = 'Список участников:\n'
+    msg = 'Список участников:\n\n'
     for i, user in enumerate(User.select().where(User.role == Role.PLAYER)):
-        msg += '{id}) {surname} {name} - {group} группа - @{username}\n'.format(id=user.tg_id, surname=user.surname,
+        msg += '{id}) {surname} {name} - {group} группа - @{username}\n'.format(id=i, surname=user.surname,
                                                                               name=user.name, username=user.username,
                                                                               group=user.group)
     bot.send_message(message.chat.id, msg)
+
+
+@bot.message_handler(commands=['say'])
+@restricted(Role.ADMIN)
+def say_cmd(message):
+    l = message.text.split(' ', maxsplit=2)
+    if len(l) < 2:
+        bot.send_message(message.chat.id, 'Wrong format!\n/get_photo tg_id <message>')
+        return
+    tg_id = l[1]
+    msg = l[2]
+    if not tg_id.isdecimal():
+        bot.send_message(message.chat.id, 'Wrong format!\ntg_id must be an integer!')
+        return
+    tg_id = int(tg_id)
+    bot.send_message(tg_id, msg)
+    bot.send_message(message.chat.id, 'Success!')
 
 
 @bot.message_handler(commands=['ban'])
