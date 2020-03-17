@@ -97,16 +97,20 @@ def check_group_number(n):
 @bot.message_handler(commands=['start'])
 @guard()
 def start_cmd(message):
-    bot.send_message(message.chat.id, config.welcomeMsg)
-    bot.send_message(message.chat.id, config.getSurname)
-    bot.register_next_step_handler(message, get_surname)
+    bot.send_message(message.chat.id, 'Регистрация завершена')
+    return
+    # bot.send_message(message.chat.id, config.welcomeMsg)
+    # bot.send_message(message.chat.id, config.getSurname)
+    # bot.register_next_step_handler(message, get_surname)
 
 
 @bot.message_handler(commands=['reg'])
 @guard()
 def reg_cmd(message):
-    bot.send_message(message.chat.id, config.getSurname)
-    bot.register_next_step_handler(message, get_surname)
+    bot.send_message(message.chat.id, 'Регистрация завершена')
+    return
+    # bot.send_message(message.chat.id, config.getSurname)
+    # bot.register_next_step_handler(message, get_surname)
 
 
 def get_surname(message):
